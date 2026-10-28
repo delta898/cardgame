@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f5f4f0">
+<title>짝을 찾아라 · 메모리 카드</title>
+<style>
+:root{font-family:ui-rounded,"SF Pro Rounded","Segoe UI",system-ui,sans-serif;color:#232b39;background:#f5f4f0;font-synthesis:none;font-optical-sizing:auto}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;min-height:100dvh;display:grid;place-items:center;padding:clamp(14px,4vw,40px);background:radial-gradient(ellipse at 50% 0,#fff 0%,#f5f4f0 62%)}
+main{width:min(100%,610px);text-align:center}.eyebrow{margin:0 0 8px;color:#8a8e97;font-size:12px;font-weight:800;letter-spacing:.19em;text-transform:uppercase}h1{font-size:clamp(30px,6vw,46px);letter-spacing:-.055em;margin:0;color:#252d3b}.subtitle{margin:9px 0 25px;color:#747b88;font-size:15px}
+.panel{background:#fff;padding:clamp(16px,4vw,27px);border:1px solid #e9e8e4;border-radius:25px;box-shadow:0 15px 45px #373c4911}.topline{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:19px}.stats{display:flex;gap:9px}.stat{min-width:96px;background:#f6f7f8;border-radius:14px;padding:9px 14px}.stat-label{display:block;color:#8a909a;font-size:11px;font-weight:700;letter-spacing:.06em}.stat-value{display:block;color:#293346;font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;margin-top:1px}button{font:inherit}.restart{border:0;border-radius:13px;background:#29364b;color:#fff;font-weight:750;padding:12px 16px;cursor:pointer;transition:transform .15s,background .15s}.restart:hover{background:#3a4b68;transform:translateY(-1px)}.restart:active{transform:translateY(0)}
+.settings{display:flex;align-items:center;justify-content:center;gap:9px;margin:-4px 0 16px;color:#737b88;font-size:13px;font-weight:700}.settings select{border:1px solid #e1e3e7;border-radius:10px;background:#fff;color:#303b4e;font:inherit;padding:8px 11px;cursor:pointer}.grid{display:grid;grid-template-columns:repeat(var(--columns,4),minmax(0,1fr));gap:clamp(6px,1.7vw,13px);width:min(100%,490px);margin:0 auto}.card{appearance:none;border:0;padding:0;aspect-ratio:1/1;border-radius:17px;background:#536c91;color:#fff;font-size:clamp(22px,6vw,45px);font-weight:800;cursor:pointer;position:relative;display:grid;place-items:center;overflow:hidden;box-shadow:0 4px 0 #3d5272;transition:transform .2s,background .2s,box-shadow .2s}.card:hover:not(:disabled){transform:translateY(-3px);box-shadow:0 7px 0 #3d5272}.card:focus-visible,.restart:focus-visible{outline:3px solid #e5a755;outline-offset:3px}.card::before{content:"✦";font-size:clamp(16px,4.5vw,31px);color:#dce7f5;text-shadow:0 1px 0 #ffffff55}.card.revealed,.card.matched{background:#f2b96f;color:#273449;box-shadow:0 4px 0 #dc9e53;animation:flip-in .22s ease-out}.card.revealed::before,.card.matched::before{display:none}.card.matched{background:#d9eadc;color:#42734d;box-shadow:0 4px 0 #b9d4bd;cursor:default}.card:disabled{cursor:default}@keyframes flip-in{from{transform:rotateY(85deg) scale(.88)}to{transform:rotateY(0) scale(1)}}
+.message{min-height:26px;margin:18px 0 0;color:#6e7684;font-size:14px;font-weight:650}.message.win{color:#39814b}.footnote{margin:13px 0 0;color:#9a9da4;font-size:12px}@media(max-width:420px){.topline{flex-wrap:wrap}.restart{padding:11px 13px}.stat{min-width:84px;padding:8px 10px}.card{border-radius:13px}}
+@media(max-height:680px) and (min-width:500px){body{padding-block:16px}.subtitle{margin-bottom:16px}.panel{padding:18px}.topline{margin-bottom:13px}.grid{gap:9px;width:min(100%,min(430px,52vh))}.message{margin-top:12px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<main>
+  <p class="eyebrow">MEMORY GAME</p>
+  <h1>짝을 찾아라</h1>
+  <p class="subtitle">카드 두 장을 골라 같은 숫자끼리 짝을 맞춰 보세요.</p>
+  <section class="panel" aria-label="카드 짝 맞추기 게임">
+    <div class="topline">
+      <div class="stats" aria-label="게임 점수">
+        <div class="stat"><span class="stat-label">시도 횟수</span><span class="stat-value" id="moves">0</span></div>
+        <div class="stat"><span class="stat-label">찾은 쌍</span><span class="stat-value" id="pairs">0 / 8</span></div>
+      </div>
+      <button class="restart" id="restart" type="button">↻ 다시 시작</button>
+    </div>
+    <label class="settings" for="board-size">게임 크기
+      <select id="board-size" aria-label="게임 카드 개수">
+        <option value="4">4 × 4 · 16장</option>
+        <option value="6">6 × 6 · 36장</option>
+        <option value="8">8 × 8 · 64장</option>
+      </select>
+    </label>
+    <div class="grid" id="grid" role="group" aria-label="숫자 카드 16장"></div>
+    <p class="message" id="message" role="status" aria-live="polite">카드 두 장을 열어 보세요!</p>
+  </section>
+  <p class="footnote">모든 숫자 쌍을 찾으면 게임이 완료됩니다.</p>
+</main>
+<script>
+(() => {
+  const grid = document.querySelector('#grid');
+  const movesEl = document.querySelector('#moves');
+  const pairsEl = document.querySelector('#pairs');
+  const messageEl = document.querySelector('#message');
+  const restartButton = document.querySelector('#restart');
+  const boardSize = document.querySelector('#board-size');
+  let cards = [];
+  let open = [];
+  let moves = 0;
+  let matchedPairs = 0;
+  let locked = false;
+  let gameId = 0;
+  let mismatchTimer = null;
+  let columns = 4;
+
+  function shuffle(items) {
+    for (let i = items.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [items[i], items[j]] = [items[j], items[i]];
+    }
+    return items;
+  }
+
+  function render() {
+    grid.replaceChildren();
+    grid.style.setProperty('--columns', columns);
+    grid.setAttribute('aria-label', `숫자 카드 ${columns * columns}장`);
+    cards.forEach((card, index) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'card';
+      button.dataset.index = String(index);
+      button.setAttribute('aria-label', `카드 ${index + 1}, 뒷면`);
+      button.addEventListener('click', () => reveal(index));
+      grid.append(button);
+    });
+    movesEl.textContent = String(moves);
+    pairsEl.textContent = `${matchedPairs} / ${(columns * columns) / 2}`;
+  }
+
+  function reveal(index) {
+    if (locked) return;
+    const card = cards[index];
+    if (card.open || card.matched) return;
+    card.open = true;
+    open.push(index);
+    const button = grid.children[index];
+    button.textContent = String(card.value);
+    button.classList.add('revealed');
+    button.setAttribute('aria-label', `카드 ${index + 1}, 숫자 ${card.value}`);
+    if (open.length !== 2) return;
+
+    moves += 1;
+    movesEl.textContent = String(moves);
+    const [first, second] = open;
+    if (cards[first].value === cards[second].value) {
+      cards[first].matched = true;
+      cards[second].matched = true;
+      [first, second].forEach(i => {
+        const matchedButton = grid.children[i];
+        matchedButton.classList.remove('revealed');
+        matchedButton.classList.add('matched');
+        matchedButton.setAttribute('aria-label', `카드 ${i + 1}, 숫자 ${cards[i].value}, 짝을 찾음`);
+        matchedButton.disabled = true;
+      });
+      matchedPairs += 1;
+      pairsEl.textContent = `${matchedPairs} / ${(columns * columns) / 2}`;
+      open = [];
+      if (matchedPairs === (columns * columns) / 2) {
+        messageEl.textContent = `모든 짝을 찾았어요! 최종 시도 횟수는 ${moves}회입니다.`;
+        messageEl.classList.add('win');
+      } else {
+        messageEl.textContent = '짝을 찾았어요! 계속해 보세요.';
+      }
+      return;
+    }
+
+    locked = true;
+    messageEl.textContent = '다른 숫자예요. 잠시 후 카드가 다시 뒤집힙니다.';
+    const currentGame = gameId;
+    mismatchTimer = window.setTimeout(() => {
+      if (currentGame !== gameId) return;
+      [first, second].forEach(i => {
+        cards[i].open = false;
+        const unmatchedButton = grid.children[i];
+        unmatchedButton.textContent = '';
+        unmatchedButton.classList.remove('revealed');
+        unmatchedButton.setAttribute('aria-label', `카드 ${i + 1}, 뒷면`);
+      });
+      open = [];
+      locked = false;
+      mismatchTimer = null;
+      messageEl.textContent = '카드 두 장을 열어 보세요!';
+    }, 850);
+  }
+
+  function startGame() {
+    gameId += 1;
+    if (mismatchTimer !== null) window.clearTimeout(mismatchTimer);
+    mismatchTimer = null;
+    locked = false;
+    open = [];
+    moves = 0;
+    matchedPairs = 0;
+    messageEl.classList.remove('win');
+    messageEl.textContent = '카드 두 장을 열어 보세요!';
+    const pairCount = (columns * columns) / 2;
+    cards = shuffle(Array.from({length: pairCount}, (_, i) => i + 1).flatMap(value => [
+      {value, open: false, matched: false},
+      {value, open: false, matched: false}
+    ]));
+    render();
+  }
+
+  restartButton.addEventListener('click', startGame);
+  boardSize.addEventListener('change', () => {
+    columns = Number(boardSize.value);
+    startGame();
+  });
+  startGame();
+})();
+</script>
+</body>
+</html>
